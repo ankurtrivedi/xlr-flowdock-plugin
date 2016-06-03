@@ -1,6 +1,15 @@
+/**
+ * THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS
+ * FOR A PARTICULAR PURPOSE. THIS CODE AND INFORMATION ARE NOT SUPPORTED BY XEBIALABS.
+ */
 package com.xebialabs.xlrelease.flowdock.plugin;
 
 import com.xebialabs.deployit.plugin.api.udm.ConfigurationItem;
+import com.xebialabs.xlrelease.domain.Phase;
+import com.xebialabs.xlrelease.domain.PlanItem;
+import com.xebialabs.xlrelease.domain.Release;
+import com.xebialabs.xlrelease.domain.Task;
 
 import java.io.UnsupportedEncodingException;
 
@@ -9,7 +18,7 @@ import java.io.UnsupportedEncodingException;
  */
 public class TeamInboxMessage extends FlowdockMessage {
 
-    public static final String XLRELEASE_RELEASE_STARTED_MAIL = "xlrelease+started@flowdock.com";
+    public static final String XLRELEASE_RELEASE_MAIL = "xlrelease@flowdock.com";
 
     protected String externalUserName;
     protected String subject;
@@ -20,7 +29,7 @@ public class TeamInboxMessage extends FlowdockMessage {
     public TeamInboxMessage() {
         this.externalUserName = "XLRelease";
         this.subject = "Message from XL Release";
-        this.fromAddress = XLRELEASE_RELEASE_STARTED_MAIL;
+        this.fromAddress = XLRELEASE_RELEASE_MAIL;
         this.source = "";
     }
 
@@ -51,16 +60,27 @@ public class TeamInboxMessage extends FlowdockMessage {
         return postData.toString();
     }
 
-    public static TeamInboxMessage fromAuditableDeployitEvent(ConfigurationItem ci) {
+    public static TeamInboxMessage fromAuditableDeployitEvent(PlanItem pi) {
         TeamInboxMessage msg = new TeamInboxMessage();
-        StringBuffer content = new StringBuffer();
-        content.append("XL Release event for ").append(ci.getId());
-        content.append(" with message ").append(ci.getProperty("message"));
-        content.append(" from user ").append(ci.getProperty("username"));
+        String content = "";
 
-        msg.setContent(content.toString());
+        if(pi instanceof Release){
+            content = "Release " + pi.getProperty("title") +
+                    " assigned to " + pi.getProperty("owner") + " has status " + ((Release) pi).getStatus().value();
+        }
+        else if (pi instanceof Phase){
+            content = "Phase " + pi.getProperty("title") + " has status " + ((Phase) pi).getStatus().value();
+
+        }
+        else if(pi instanceof Task){
+
+            content = "Task " + pi.getProperty("title") +
+                    " assigned to " + pi.getProperty("owner") + " has status " + ((Task) pi).getStatus().value();
+
+        }
+        msg.setContent(content);
         msg.setSubject("XL Release event");
-        msg.setFromAddress(XLRELEASE_RELEASE_STARTED_MAIL);
+        msg.setFromAddress(XLRELEASE_RELEASE_MAIL);
         msg.setSource("XL Release");
         msg.setTags("XL Release");
 
